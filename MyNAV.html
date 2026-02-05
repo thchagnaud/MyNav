@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyNav - Flight Prep</title>
+    <style>
+        :root {
+            --primary: #007bff;
+            --danger: #ff4444;
+            --bg: #121212;
+            --card: #1e1e1e;
+            --text: #ffffff;
+            --meteo: #28a745;
+            --notam: #ff9800;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* --- HANGAR --- */
+        #hangarSection { text-align: center; margin-top: 50px; }
+        .hangar-grid { display: flex; justify-content: center; gap: 20px; margin-top: 30px; flex-wrap: wrap; }
+        .plane-card {
+            background: var(--card); border: 2px solid #333; border-radius: 20px;
+            padding: 30px; width: 140px; cursor: pointer; transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .plane-card:hover { border-color: var(--primary); transform: translateY(-5px); }
+
+        /* --- COCKPIT --- */
+        .hidden { display: none; }
+        .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 15px; margin-bottom: 20px; }
+        .btn-back { background: #333; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; }
+        .btn-clear { background: transparent; color: #666; border: 1px solid #444; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 0.8em; }
+
+        .grid-layout { display: grid; grid-template-columns: 1fr; gap: 20px; }
+        @media (min-width: 768px) { .grid-layout { grid-template-columns: 1fr 1fr; } }
+
+        .card { background: var(--card); border-radius: 15px; padding: 20px; border: 1px solid #222; }
+        .card h3 { margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; color: var(--primary); font-size: 1.1em; }
+
+        /* --- BOUTONS / LIENS --- */
+        .doc-link {
+            display: flex; align-items: center; background: #2a2a2a; color: white;
+            text-decoration: none; padding: 15px; margin-bottom: 12px; border-radius: 10px;
+            font-weight: bold; border: 1px solid #444; transition: 0.2s;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .doc-link:hover { background: #383838; border-color: #666; }
+        
+        .checklist { border-left: 6px solid var(--danger) !important; color: #ff8888; }
+        .manual { border-left: 6px solid var(--primary) !important; color: #88ccff; }
+        .type-meteo { border-left: 6px solid var(--meteo) !important; color: #afffaf; }
+        .type-notam { border-left: 6px solid var(--notam) !important; color: #ffcc80; }
+
+        input[type="file"] { 
+            background: #111; padding: 10px; border-radius: 8px; border: 1px dashed #444;
+            width: 100%; box-sizing: border-box; cursor: pointer; color: #888;
+        }
+
+        /* --- DECISION MATRIX (CHECKBOXES) --- */
+        .decision-zone {
+            margin-top: 30px;
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid #333;
+        }
+        .checkbox-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .check-item input {
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+        }
+        #goStatus {
+            font-size: 2em;
+            font-weight: 900;
+            padding: 15px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            transition: 0.3s;
+            background: #2a0000;
+            color: var(--danger);
+            border: 2px solid var(--danger);
+        }
+        #goStatus.is-go {
+            background: #002a00;
+            color: var(--meteo);
+            border: 2px solid var(--meteo);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="hangarSection" class="container">
+        <h1 style="letter-spacing: 3px; margin-bottom: 5px;">MY NAV</h1>
+        <p style="color: #666; margin-bottom: 40px;">Electronic Flight Bag Personnel</p>
+        <div class="hangar-grid">
+            <div class="plane-card" onclick="selectPlane('SG11')">
+                <div style="font-size: 3rem;">✈️</div>
+                <h2>SG11</h2>
+                <p>Super Guépard</p>
+            </div>
+            <div class="plane-card" onclick="selectPlane('WT9')">
+                <div style="font-size: 3rem;">⚡</div>
+                <h2>WT9</h2>
+                <p>WT9 Dynamic</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="cockpitSection" class="container hidden">
+        <div class="header">
+            <button class="btn-back" onclick="goBack()">« Hangar</button>
+            <h2 id="currentPlaneDisplay" style="margin:0;">Machine</h2>
+            <button class="btn-clear" onclick="clearBriefing()">Effacer Vol</button>
+        </div>
+
+        <div class="grid-layout">
+            <div class="card">
+                <h3>📚 Documents Fixes</h3>
+                <div id="docsContainer"></div>
+            </div>
+
+            <div class="card">
+                <h3>☁️ Briefing du jour</h3>
+                <input type="file" id="fileInput" multiple accept=".pdf">
+                <div id="briefingList" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+
+        <div class="decision-zone">
+            <div class="checkbox-group">
+                <label class="check-item"><input type="checkbox" class="go-check" onchange="checkDecision()"> NOTAM </label>
+                <label class="check-item"><input type="checkbox" class="go-check" onchange="checkDecision()"> METEO </label>
+                <label class="check-item"><input type="checkbox" class="go-check" onchange="checkDecision()"> AZBA </label>
+            </div>
+            <div id="goStatus">NO GO</div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const briefingList = document.getElementById('briefingList');
+        const goStatus = document.getElementById('goStatus');
+
+        function selectPlane(plane) {
+            document.getElementById('hangarSection').classList.add('hidden');
+            document.getElementById('cockpitSection').classList.remove('hidden');
+            document.getElementById('currentPlaneDisplay').innerText = plane;
+            resetChecks(); // Réinitialise les cases au changement d'avion
+
+            const docsContainer = document.getElementById('docsContainer');
+            if (plane === 'SG11') {
+                docsContainer.innerHTML = `
+                    <a href="docs/CHECKLISTSG11.pdf" target="_blank" class="doc-link checklist">⚠️ CHECKLIST SG11</a>
+                    <a href="docs/MANUELSG11.pdf" target="_blank" class="doc-link manual">📄 MANUEL DE VOL SG11</a>
+                `;
+            } else {
+                docsContainer.innerHTML = `
+                    <a href="docs/CHECKLISTWT9.pdf" target="_blank" class="doc-link checklist">⚠️ CHECKLIST WT9</a>
+                    <a href="docs/MANUELWT9.pdf" target="_blank" class="doc-link manual">📄 MANUEL DE VOL WT9</a>
+                `;
+            }
+        }
+
+        function goBack() {
+            document.getElementById('hangarSection').classList.remove('hidden');
+            document.getElementById('cockpitSection').classList.add('hidden');
+        }
+
+        function clearBriefing() {
+            briefingList.innerHTML = "";
+            fileInput.value = "";
+            resetChecks();
+        }
+
+        function resetChecks() {
+            document.querySelectorAll('.go-check').forEach(c => c.checked = false);
+            checkDecision();
+        }
+
+        // Fonction de vérification GO / NO-GO
+        function checkDecision() {
+            const checks = document.querySelectorAll('.go-check');
+            const allChecked = Array.from(checks).every(c => c.checked);
+            
+            if (allChecked) {
+                goStatus.innerText = "🚀 GO";
+                goStatus.classList.add('is-go');
+            } else {
+                goStatus.innerText = "NO GO";
+                goStatus.classList.remove('is-go');
+            }
+        }
+
+        fileInput.addEventListener('change', function() {
+            Array.from(this.files).forEach(file => {
+                const fileURL = URL.createObjectURL(file);
+                const name = file.name.toUpperCase();
+                const link = document.createElement('a');
+                link.href = fileURL;
+                link.target = "_blank";
+                link.className = "doc-link";
+
+                if (name.includes("PDV")) {
+                    link.classList.add("type-meteo");
+                    link.innerHTML = `📡 METEO : ${file.name}`;
+                } 
+                else if (name.includes("SOFIA") || name.includes("PIB") || name.includes("BRIEFING")) {
+                    link.classList.add("type-notam");
+                    link.innerHTML = `📍 NOTAM : ${file.name}`;
+                } 
+                else {
+                    link.innerHTML = `📄 DOC : ${file.name}`;
+                }
+                briefingList.appendChild(link);
+            });
+        });
+    </script>
+</body>
+</html>
